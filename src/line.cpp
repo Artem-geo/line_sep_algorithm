@@ -1,5 +1,5 @@
-#include "line.h"
-#include "misc.h"
+#include "line.hpp"
+#include "misc.hpp"
 #include <boost/math/statistics/univariate_statistics.hpp>
 #include <boost/math/statistics/linear_regression.hpp>
 #include <cmath>
@@ -10,10 +10,11 @@
 using namespace misc;
 
 namespace line {
-    Line::Line(int32_t lsymb,
+    Line::Line(int lnum,
+               int32_t lsymb,
                std::vector<double>& x,
                std::vector<double>& y)
-        : symb(lsymb)
+        : num(lnum), symb(lsymb)
     {
         if (x.size() != y.size())
             throw std::invalid_argument("X and Y columns should have the same size in order to be written to a line");
@@ -23,10 +24,16 @@ namespace line {
         Eigen::Map<Eigen::VectorXd> yv(y.data(), y.size());
         xy.col(0) = xv;
         xy.col(1) = yv;
+
+        xlim = {xy.col(0).minCoeff(), xy.col(0).maxCoeff()};
+        ylim = {xy.col(1).minCoeff(), xy.col(1).maxCoeff()};
+
+        dist_left = std::vector<double>(x.size(), rDUMMY);
+        dist_right = std::vector<double>(x.size(), rDUMMY);
     }
     std::ostream& operator<<(std::ostream& os, const Line& line)
     {
-        os << "Line symbol: " << line.symb << "; x/y size: " << line.xy.rows() << std::endl;
+        os << "Line number: " << line.num << "; line symbol: " << line.symb << "; line proj: " << line.proj << "; azimuth: " << line.azimuth << std::endl;
         return os;
     }
 }

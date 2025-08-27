@@ -156,12 +156,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\line.cpp" />
+    <ClCompile Include="src\line_sep.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\misc.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\line.h" />
-    <ClInclude Include="include\misc.h" />
+    <ClInclude Include="include\line.hpp" />
+    <ClInclude Include="include\line_sep.hpp" />
+    <ClInclude Include="include\misc.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

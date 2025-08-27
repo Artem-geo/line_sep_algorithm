@@ -24,12 +24,18 @@
     <ClCompile Include="src\misc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\line_sep.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\line.h">
+    <ClInclude Include="include\line.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\misc.h">
+    <ClInclude Include="include\misc.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\line_sep.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
