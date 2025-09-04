@@ -4,7 +4,7 @@
 #include <set>
 
 namespace line {
-    struct LR_hood { // left-right line neighbourhood
+    struct LR_adj { // left-right line neighbourhood
         std::set<int32_t> left;
         std::set<int32_t> right;
     };

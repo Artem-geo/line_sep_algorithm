@@ -61,6 +61,29 @@ namespace misc {
             ofile.close();
         }
 
+        void safe_grid(const std::filesystem::path& filepath, const std::map<int32_t, line::Line>& lines,
+                       const std::map<int32_t, std::shared_ptr<line_sep::GCol>> grid)
+        {
+            std::ofstream ofile(filepath);
+            if (!ofile.is_open())
+                throw std::ios::failure("Can't open input file");
+
+            ofile << "LNUM_MAIN,LNUM_SEC,X,Y\n";
+            for (const auto& [symb, grid] : grid) {
+                for (int row {0}; row < (*grid).size(); ++row) {
+                    if ((*grid)[row].size() == 0)
+                        continue;
+                    for (auto point : (*grid)[row]) {
+                        ofile << symb << ","
+                              << point.first << ',' 
+                              << lines.at(point.first).xy.row(point.second)(0) << ',' 
+                              << lines.at(point.first).xy.row(point.second)(1) << '\n';
+                    }
+                }
+            }
+            ofile.close();
+        }
+
         std::vector<std::string> tokenise(const std::string& line)
         {
             std::vector<std::string> tokens;
