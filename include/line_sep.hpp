@@ -12,6 +12,8 @@ namespace line_sep {
     using Cell = std::set<Point>;
     using GCol = std::vector<Cell>;
 
+    enum class LR {left, right};
+
     namespace geometry {
         double calc_azimuth(std::map<int32_t, line::Line>&lines);
         Eigen::RowVector2d get_pivot(std::map<int32_t, line::Line>&lines);
@@ -37,15 +39,12 @@ namespace line_sep {
         std::pair<double, double> get_ylim(const std::map<int32_t, line::Line>& lines);
     }
     namespace gridding {
-        void init_grid(const std::map<int32_t, line::LR_adj>& line_adjs, std::map<int32_t, std::shared_ptr<line_sep::GCol>> grid, double nomdst);
-        std::tuple<double, double, double> grid_lines(const std::map<int32_t, line::Line>& lines, const std::map<int32_t, line::LR_adj>& line_adjs, std::map<int32_t, std::shared_ptr<GCol>>& grid, double nomdst);
-        void create_grid(const std::map<int32_t, line::Line>& lines, const std::set<int32_t>& lh, std::map<int32_t, std::shared_ptr<GCol>>& grid, int num_cells, double dy, double ymin_grid);
+        void init_grid(const std::map<int32_t, line::LR_adj>& line_adjs, std::map<int32_t, std::shared_ptr<line_sep::GCol>>& grid, int ncells);
+        void grid_lines(const std::map<int32_t, line::Line>& lines, const std::map<int32_t, line::LR_adj>& line_adjs, std::map<int32_t, std::shared_ptr<GCol>>& grid, double ymin_grid, double dy);
+        std::tuple<int, double, double, double> get_number_cells(const std::map<int32_t, line::Line>& lines, double nomdst, double grid_tol);
     }
     namespace distance {
-        void calc_line_dists(std::map<int32_t, line::Line>& lines, const std::map<int32_t, line::LR_adj>& line_adjs, std::map<int32_t, std::shared_ptr<GCol>>& grid, const std::tuple<double, double, double>& grid_params);
-        void calc_dist(const Eigen::MatrixXd& xy, std::vector<double>& dist, const GCol& grid_column, const std::map<int32_t, line::Line>& lines, const std::tuple<double, double, double>& grid_params);
-
-    }
-    
-    
+        void calc_line_dists(std::map<int32_t, line::Line>& lines, const std::map<int32_t, line::LR_adj>& line_adjs, const std::map<int32_t, std::shared_ptr<GCol>>& grid, double ymin_grid, double dy);
+        void calc_dist(std::map<int32_t, line::Line>& lines, LR lr, const std::map<int32_t, std::shared_ptr<GCol>>& grid, int32_t lsymb_target, int32_t lsymb_adj, double ymin_grid, double dy);
+    }  
 }

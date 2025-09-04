@@ -147,7 +147,7 @@ namespace line_sep {
     }
 
     namespace gridding {
-        void init_grid(const std::map<int32_t, line::LR_adj>& line_adjs, std::map<int32_t, std::shared_ptr<line_sep::GCol>> grid, double nomdst)
+        void init_grid(const std::map<int32_t, line::LR_adj>& line_adjs, std::map<int32_t, std::shared_ptr<line_sep::GCol>>& grid, int ncells)
         {
             std::set<std::set<int32_t>> lines_groups;
             for (auto [symb, lr_lines] : line_adjs) {
@@ -157,118 +157,81 @@ namespace line_sep {
                     lines_groups.insert(lr_lines.right);
             }
 
-            for (auto lines_group : lines_groups) {
-                auto ptr_temp 
-                for ()
+            for (auto& lines_group : lines_groups) {
+                auto ptr_temp = std::make_shared<GCol>(ncells, Cell());
+                for (auto& symb : lines_group)
+                    grid[symb] = ptr_temp;
+                ptr_temp = nullptr;
             }
         }
 
-        std::tuple<double, double, double> grid_lines(const std::map<int32_t, line::Line>& lines, const std::map<int32_t, line::LR_adj>& line_adjs, 
-                                                      std::map<int32_t, std::shared_ptr<GCol>>& grid, double nomdst)
+        void grid_lines(const std::map<int32_t, line::Line>& lines, const std::map<int32_t, line::LR_adj>& line_adjs, 
+                        std::map<int32_t, std::shared_ptr<GCol>>& grid, 
+                        double ymin_grid, double dy)
+        {
+            size_t idx {0};
+            for (auto& [symb, line] : lines) {
+                for (size_t i {0}; i < (size_t)line.xy.rows(); ++i) {
+                    idx = (int)std::ceil(((line.xy.row(i)(1) - ymin_grid) / dy) - 1); // index of the cell to put the point into
+                    (*(grid.at(symb)))[idx].insert({symb, i});
+                }
+                idx = 0;
+            }
+        }
+
+        std::tuple<int, double, double, double> get_number_cells(const std::map<int32_t, line::Line>& lines, double nomdst, double grid_tol)
         {
             const std::pair<double, double>& ylim = geometry::get_ylim(lines);
-            double dy = nomdst * 0.1; // 10% of line spacing should be fine enought for the analysis
+            double dy = nomdst * grid_tol;
             double ymin_grid = (ylim.first - dy / 2);
             double ymax_grid = (ylim.second + dy / 2);
-            int num_cells = (int) std::ceil((ymax_grid - ymin_grid) / dy); // number of cells = ((ymax+dy/2) - (ymin-dy/2))/dy rounded to the nearest int up
-
-            for (auto& [symb, lh] : line_adjs) {
-                if (lh.left.size() != 0)
-                    create_grid(lines, lh.left, grid, num_cells, dy, ymin_grid);
-                if (lh.right.size() != 0)
-                    create_grid(lines, lh.right, grid, num_cells, dy, ymin_grid);
-            }
-            return {dy, ymin_grid, ymax_grid};
-        }
-        void create_grid(const std::map<int32_t, line::Line>& lines, const std::set<int32_t>& line_adj, 
-                         std::map<int32_t, std::shared_ptr<GCol>>& grid, 
-                         int num_cells, double dy, double ymin_grid)
-        {
-            auto grid_column = std::make_shared<GCol>(num_cells, Cell()); // temporary ptr to a grid column of num_cells size
-            for (auto symb : line_adj) {
-                if (!grid.contains(symb)) { // if the grid item has not been created yet
-                    grid[symb] = grid_column;
-                    auto& xy = lines.at(symb).xy;
-                    int idx {-1};
-                    for (size_t nr {0}; nr < (size_t) xy.rows(); ++nr) { // nr is a row number
-                        Point point = {symb, nr};
-                        idx = (int) std::ceil((xy.row(nr)(1) - ymin_grid) / dy - 1); // index of the cell to put the point into
-                        grid_column->at(idx).insert(point);
-                    }
-                }
-            }
-            grid_column = nullptr; // disconnect the temporary link from the pointer
+            int ncells = (int)std::ceil((ymax_grid - ymin_grid) / dy); // number of cells = ((ymax+dy/2) - (ymin-dy/2))/dy rounded to the nearest int up
+            return {ncells, ymin_grid, ymax_grid, dy}; 
         }
     }
 
     namespace distance {
-        void calc_line_dists(std::map<int32_t, line::Line>& lines, const std::map<int32_t, line::LR_adj>& line_adjs,
-                             std::map<int32_t, std::shared_ptr<GCol>>& grid, const std::tuple<double, double, double>& grid_params)
+        void calc_line_dists(std::map<int32_t, line::Line>& lines, const std::map<int32_t, line::LR_adj>& line_adjs, 
+                             const std::map<int32_t, std::shared_ptr<GCol>>& grid, double ymin_grid, double dy)
         {
             for (auto [symb, line] : lines) {
                 auto& left_adj = line_adjs.at(symb).left;
                 auto& right_adj = line_adjs.at(symb).right;
                 if (!left_adj.empty()) {
                     auto left_symb = left_adj.begin();
-                    calc_dist(line.xy, line.dist_left, *grid[*left_symb], lines, grid_params);
+                    calc_dist(lines, LR::left, grid, symb, *left_symb, ymin_grid, dy);
                 }
                 if (!right_adj.empty()) {
-                    if (symb == 110) {
-                        int temp {0};
-                    }
                     auto right_symb = right_adj.begin();
-                    calc_dist(line.xy, line.dist_right, *grid[*right_symb], lines, grid_params);
+                    calc_dist(lines, LR::right, grid, symb, *right_symb, ymin_grid, dy);
                 }
             }
         }
 
-        void calc_dist(const Eigen::MatrixXd& xy, std::vector<double>& distances, const GCol& grid_column,
-                       const std::map<int32_t, line::Line>& lines,
-                       const std::tuple<double, double, double>& grid_params)
+        void calc_dist(std::map<int32_t, line::Line>& lines, LR lr, 
+                       const std::map<int32_t, std::shared_ptr<GCol>>& grid, 
+                       int32_t lsymb_target, int32_t lsymb_adj, double ymin_grid, double dy)
         {
-            auto [dy, ymin_grid, ymax_grid] = grid_params;
+            auto& xy_target = lines.at(lsymb_target).xy;
+            auto& dists_target = (lr == LR::left) ? lines.at(lsymb_target).dist_left : lines.at(lsymb_target).dist_right;
             size_t idx {0};
 
-            auto calc_dist_from_cell = [&](size_t i, size_t idx) // i - index of current line point, idx - adjacent line cell index
+            auto calc_dist_from_cell = [&](size_t i, Cell& cell_target) // i - index of current line point, idx - adjacent line cell index
                 {
                     double dist {-1.0};
                     double temp_dist {0.0};
-                    for (auto& point : grid_column[idx]) {
-                        temp_dist = std::sqrt((xy.row(i) - lines.at(point.first).xy.row(point.second)).squaredNorm());
+                    for (auto& point : cell_target) {
+                        temp_dist = std::sqrt((xy_target.row(i) - lines.at(point.first).xy.row(point.second)).squaredNorm());
                         dist = (temp_dist > dist) ? temp_dist : dist;
                     }
                     return dist;
                 };
 
-            auto calc_dist_from_cells_adjacent = [&](size_t i, size_t idx)
-                {
-                    // cases to consider: first cell, last cell, empty previous, empty next
-                    double dist_cell_1 {-1.0};
-                    if (idx != 0) {
-                        if (grid_column[idx - 1].size() != 0)
-                            dist_cell_1 = calc_dist_from_cell(i, idx - 1);
-                    }
-
-                    double dist_cell_2 {-1.0};
-                    if (idx != distances.size() - 1) {
-                        if (grid_column[idx + 1].size() != 0)
-                            dist_cell_2 = calc_dist_from_cell(i, idx + 1);
-                    }
-
-                    if ((dist_cell_1 >= 0) && (dist_cell_2 >= 0))
-                        return (dist_cell_1 + dist_cell_2) / 2;
-                    else
-                        return (dist_cell_1 >= 0) ? dist_cell_1 : ((dist_cell_2 >= 0) ? dist_cell_2 : misc::rDUMMY);
-                };
-
-            for (size_t i {0}; i < distances.size(); ++i) {
-                idx = (int)std::ceil(((xy.row(i)(1) - ymin_grid) / dy) - 1); // index of the cell
-                if (grid_column[idx].size() != 0) {
-                    distances[i] = calc_dist_from_cell(i, idx);
-                }
-                else {
-                    distances[i] = calc_dist_from_cells_adjacent(i, idx);
-                }
+            for (size_t i {0}; i < dists_target.size(); ++i) {
+                idx = (int)std::ceil(((xy_target.row(i)(1) - ymin_grid) / dy) - 1);
+                auto& cell_target = (*(grid.at(lsymb_adj)))[idx];
+                if (cell_target.size() != 0)
+                    dists_target[i] = calc_dist_from_cell(i, cell_target);
             }
         }
     }
