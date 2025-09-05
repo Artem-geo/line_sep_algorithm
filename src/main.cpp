@@ -8,7 +8,7 @@
 int main()
 {
     try {
-        std::string fpath = "C:\\Dev\\line_sep_algorithm\\qgis\\points_315_approx_symb.csv";
+        std::string fpath = "C:\\Dev\\SkyMetrics\\line_sep\\qgis\\points_315_approx_symb.csv";
         std::string appdx = "_rotated_with_dist";
         std::filesystem::path filepath(fpath);
         std::filesystem::path ofilepath = filepath;
