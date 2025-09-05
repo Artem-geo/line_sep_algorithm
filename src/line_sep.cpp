@@ -197,14 +197,18 @@ namespace line_sep {
             for (auto [symb, line] : lines) {
                 auto& left_adj = line_adjs.at(symb).left;
                 auto& right_adj = line_adjs.at(symb).right;
+                std::cout << "Symbol: " << symb;
                 if (!left_adj.empty()) {
                     auto left_symb = left_adj.begin();
+                    std::cout << " left: " << *left_symb;
                     calc_dist(lines, LR::left, grid, symb, *left_symb, ymin_grid, dy);
                 }
                 if (!right_adj.empty()) {
                     auto right_symb = right_adj.begin();
+                    std::cout << " right: " << *right_symb;
                     calc_dist(lines, LR::right, grid, symb, *right_symb, ymin_grid, dy);
                 }
+                std::cout << '\n';
             }
         }
 
@@ -218,16 +222,16 @@ namespace line_sep {
 
             auto calc_dist_from_cell = [&](size_t i, Cell& cell_target) // i - index of current line point, idx - adjacent line cell index
                 {
-                    double dist {-1.0};
+                    double dist {misc::DOUBLE_MAX};
                     double temp_dist {0.0};
                     for (auto& point : cell_target) {
                         temp_dist = std::sqrt((xy_target.row(i) - lines.at(point.first).xy.row(point.second)).squaredNorm());
-                        dist = (temp_dist > dist) ? temp_dist : dist;
+                        dist = (temp_dist <  dist) ? temp_dist : dist;
                     }
                     return dist;
                 };
 
-            for (size_t i {0}; i < dists_target.size(); ++i) {
+            for (size_t i {0}; i < (size_t)xy_target.rows(); ++i) {
                 idx = (int)std::ceil(((xy_target.row(i)(1) - ymin_grid) / dy) - 1);
                 auto& cell_target = (*(grid.at(lsymb_adj)))[idx];
                 if (cell_target.size() != 0)

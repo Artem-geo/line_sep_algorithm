@@ -9,7 +9,7 @@ int main()
 {
     try {
         std::string fpath = "C:\\Dev\\line_sep_algorithm\\qgis\\points_315_approx_symb.csv";
-        std::string appdx = "_rotated";
+        std::string appdx = "_rotated_with_dist";
         std::filesystem::path filepath(fpath);
         std::filesystem::path ofilepath = filepath;
         std::filesystem::path ofilename = filepath.stem().concat(appdx);
@@ -31,12 +31,13 @@ int main()
         double ndst = 500.0; // nominal line separation
         line_sep::geometry::sort_lines(lines, line_adjs, ndst, 0.15);
         
-        auto [ncells, ymin_grid, _, dy] = line_sep::gridding::get_number_cells(lines, ndst, 0.1);
+        auto [ncells, ymin_grid, _, dy] = line_sep::gridding::get_number_cells(lines, ndst, 0.10);
         std::map<int32_t, std::shared_ptr<line_sep::GCol>> grid;
         line_sep::gridding::init_grid(line_adjs, grid, ncells);
         line_sep::gridding::grid_lines(lines, line_adjs, grid, ymin_grid, dy);
 
         line_sep::distance::calc_line_dists(lines, line_adjs, grid, ymin_grid, dy);
+        misc::io::safe_lines_with_dist(ofilepath, lines);
         //misc::io::safe_grid(ofilepath, lines, grid);
         //misc::io::safe_lines(ofilepath, lines);
 

@@ -18,6 +18,7 @@ namespace misc {
     namespace io {
         void load_lines(const std::filesystem::path& filepath, std::map<int32_t, line::Line>&lines);
         void safe_lines(const std::filesystem::path& filepath, const std::map<int32_t, line::Line>& lines);
+        void safe_lines_with_dist(const std::filesystem::path& filepath, const std::map<int32_t, line::Line>& lines);
         void safe_grid(const std::filesystem::path& filepath, const std::map<int32_t, line::Line>& lines, const std::map<int32_t, std::shared_ptr<line_sep::GCol>> grid);
         std::vector<std::string> tokenise(const std::string& line);
     }

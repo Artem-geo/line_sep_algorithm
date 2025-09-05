@@ -61,6 +61,22 @@ namespace misc {
             ofile.close();
         }
 
+        void safe_lines_with_dist(const std::filesystem::path& filepath, const std::map<int32_t, line::Line>& lines)
+        {
+            std::ofstream ofile(filepath);
+            if (!ofile.is_open())
+                throw std::ios::failure("Can't open input file");
+
+            ofile << "LNUM,X,Y,LSYMB,DIST_LEFT,DIST_RIGHT\n";
+            for (const auto& [symb, ln] : lines) {
+                for (int row {0}; row < ln.xy.rows(); ++row) {
+                    ofile << ln.num << "," << ln.xy.row(row)(0) << "," << ln.xy.row(row)(1) << "," << ln.symb;
+                    ofile << "," << ln.dist_left[row] << "," << ln.dist_right[row] << "\n";
+                }
+            }
+            ofile.close();
+        }
+
         void safe_grid(const std::filesystem::path& filepath, const std::map<int32_t, line::Line>& lines,
                        const std::map<int32_t, std::shared_ptr<line_sep::GCol>> grid)
         {
@@ -68,7 +84,7 @@ namespace misc {
             if (!ofile.is_open())
                 throw std::ios::failure("Can't open input file");
 
-            ofile << "LNUM_MAIN,LNUM_SEC,X,Y\n";
+            ofile << "LNUM_MAIN,LNUM_SEC,X,Y,CELL\n";
             for (const auto& [symb, grid] : grid) {
                 for (int row {0}; row < (*grid).size(); ++row) {
                     if ((*grid)[row].size() == 0)
@@ -77,7 +93,7 @@ namespace misc {
                         ofile << symb << ","
                               << point.first << ',' 
                               << lines.at(point.first).xy.row(point.second)(0) << ',' 
-                              << lines.at(point.first).xy.row(point.second)(1) << '\n';
+                              << lines.at(point.first).xy.row(point.second)(1) << ',' << row << '\n';
                     }
                 }
             }
