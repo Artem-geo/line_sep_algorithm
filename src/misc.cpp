@@ -1,11 +1,11 @@
-#include "line.hpp"
-#include "misc.hpp"
+#include "line_sep/line.hpp"
+#include "line_sep/misc.hpp"
 #include <algorithm>
 #include <execution>
 #include <fstream>
 #include <ranges>
 
-namespace misc {
+namespace line_sep::misc {
     namespace io {
         void load_lines(const std::filesystem::path& filepath, 
                         std::map<int32_t, line::Line>& lines)
@@ -78,7 +78,7 @@ namespace misc {
         }
 
         void safe_grid(const std::filesystem::path& filepath, const std::map<int32_t, line::Line>& lines,
-                       const std::map<int32_t, std::shared_ptr<line_sep::GCol>> grid)
+                        const std::map<int32_t, std::shared_ptr<line::GCol>> grid)
         {
             std::ofstream ofile(filepath);
             if (!ofile.is_open())
@@ -91,9 +91,9 @@ namespace misc {
                         continue;
                     for (auto point : (*grid)[row]) {
                         ofile << symb << ","
-                              << point.first << ',' 
-                              << lines.at(point.first).xy.row(point.second)(0) << ',' 
-                              << lines.at(point.first).xy.row(point.second)(1) << ',' << row << '\n';
+                                << point.first << ',' 
+                                << lines.at(point.first).xy.row(point.second)(0) << ',' 
+                                << lines.at(point.first).xy.row(point.second)(1) << ',' << row << '\n';
                     }
                 }
             }

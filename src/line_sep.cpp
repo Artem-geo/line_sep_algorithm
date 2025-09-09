@@ -1,11 +1,9 @@
-#include "line.hpp"
-#include "line_sep.hpp"
-#include "misc.hpp"
+#include "line_sep/line.hpp"
+#include "line_sep/line_sep.hpp"
+#include "line_sep/misc.hpp"
 #include <algorithm>
 #include <execution>
 #include <iostream>
-
-using misc::PI;
 
 namespace line_sep {
     namespace geometry {
@@ -61,7 +59,7 @@ namespace line_sep {
                 ln.xy = (ln.xy.rowwise() - pivot) * rmatrix.transpose();
                 ln.xy = ln.xy.rowwise() + pivot;
                 ln.azimuth -= angle;
-                ln.azimuth = (ln.azimuth < 0) ? ln.azimuth + PI : ln.azimuth; // so that resultant azimuth is [0, pi) again (without negative values)
+                ln.azimuth = (ln.azimuth < 0) ? ln.azimuth + misc::PI : ln.azimuth; // so that resultant azimuth is [0, pi) again (without negative values)
                 ln.xlim = {ln.xy.col(0).minCoeff(), ln.xy.col(0).maxCoeff()};
                 ln.ylim = {ln.xy.col(1).minCoeff(), ln.xy.col(1).maxCoeff()};
             }
@@ -72,7 +70,7 @@ namespace line_sep {
             Eigen::MatrixXd rotated_matrix;
             double angle {0.0};
             for (auto& [symb, ln] : lines) {
-                angle = (ln.azimuth > PI / 2) ? ln.azimuth - PI : ln.azimuth; // to choose whether the line should be rotated CW (angle>pi/2) or CCW (angle<pi/2 or = pi/2)
+                angle = (ln.azimuth > misc::PI / 2) ? ln.azimuth - misc::PI : ln.azimuth; // to choose whether the line should be rotated CW (angle>pi/2) or CCW (angle<pi/2 or = pi/2)
                 Eigen::Rotation2D<double> r(angle);
                 Eigen::MatrixXd rmatrix = r.toRotationMatrix();
                 rotated_matrix = (ln.xy.rowwise() - pivot) * rmatrix.transpose(); // fine-tune line orientation
@@ -147,7 +145,7 @@ namespace line_sep {
     }
 
     namespace gridding {
-        void init_grid(const std::map<int32_t, line::LR_adj>& line_adjs, std::map<int32_t, std::shared_ptr<line_sep::GCol>>& grid, int ncells)
+        void init_grid(const std::map<int32_t, line::LR_adj>& line_adjs, std::map<int32_t, std::shared_ptr<line::GCol>>& grid, int ncells)
         {
             std::set<std::set<int32_t>> lines_groups;
             for (auto [symb, lr_lines] : line_adjs) {
@@ -158,7 +156,7 @@ namespace line_sep {
             }
 
             for (auto& lines_group : lines_groups) {
-                auto ptr_temp = std::make_shared<GCol>(ncells, Cell());
+                auto ptr_temp = std::make_shared<line::GCol>(ncells, line::Cell());
                 for (auto& symb : lines_group)
                     grid[symb] = ptr_temp;
                 ptr_temp = nullptr;
@@ -166,7 +164,7 @@ namespace line_sep {
         }
 
         void grid_lines(const std::map<int32_t, line::Line>& lines, const std::map<int32_t, line::LR_adj>& line_adjs, 
-                        std::map<int32_t, std::shared_ptr<GCol>>& grid, 
+                        std::map<int32_t, std::shared_ptr<line::GCol>>& grid, 
                         double ymin_grid, double dy)
         {
             size_t idx {0};
@@ -192,7 +190,7 @@ namespace line_sep {
 
     namespace distance {
         void calc_line_dists(std::map<int32_t, line::Line>& lines, const std::map<int32_t, line::LR_adj>& line_adjs, 
-                             const std::map<int32_t, std::shared_ptr<GCol>>& grid, double ymin_grid, double dy)
+                             const std::map<int32_t, std::shared_ptr<line::GCol>>& grid, double ymin_grid, double dy)
         {
             for (auto [symb, line] : lines) {
                 auto& left_adj = line_adjs.at(symb).left;
@@ -201,26 +199,26 @@ namespace line_sep {
                 if (!left_adj.empty()) {
                     auto left_symb = left_adj.begin();
                     std::cout << " left: " << *left_symb;
-                    calc_dist(lines, LR::left, grid, symb, *left_symb, ymin_grid, dy);
+                    calc_dist(lines, line::LR::left, grid, symb, *left_symb, ymin_grid, dy);
                 }
                 if (!right_adj.empty()) {
                     auto right_symb = right_adj.begin();
                     std::cout << " right: " << *right_symb;
-                    calc_dist(lines, LR::right, grid, symb, *right_symb, ymin_grid, dy);
+                    calc_dist(lines, line::LR::right, grid, symb, *right_symb, ymin_grid, dy);
                 }
                 std::cout << '\n';
             }
         }
 
-        void calc_dist(std::map<int32_t, line::Line>& lines, LR lr, 
-                       const std::map<int32_t, std::shared_ptr<GCol>>& grid, 
+        void calc_dist(std::map<int32_t, line::Line>& lines, line::LR lr, 
+                       const std::map<int32_t, std::shared_ptr<line::GCol>>& grid, 
                        int32_t lsymb_target, int32_t lsymb_adj, double ymin_grid, double dy)
         {
             auto& xy_target = lines.at(lsymb_target).xy;
-            auto& dists_target = (lr == LR::left) ? lines.at(lsymb_target).dist_left : lines.at(lsymb_target).dist_right;
+            auto& dists_target = (lr == line::LR::left) ? lines.at(lsymb_target).dist_left : lines.at(lsymb_target).dist_right;
             size_t idx {0};
 
-            auto calc_dist_from_cell = [&](size_t i, Cell& cell_target) // i - index of current line point, idx - adjacent line cell index
+            auto calc_dist_from_cell = [&](size_t i, line::Cell& cell_target) // i - index of current line point, idx - adjacent line cell index
                 {
                     double dist {misc::DOUBLE_MAX};
                     double temp_dist {0.0};

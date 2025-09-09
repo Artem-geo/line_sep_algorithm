@@ -1,25 +1,21 @@
-#include "line.hpp"
-#include "misc.hpp"
-#include <boost/math/statistics/univariate_statistics.hpp>
-#include <boost/math/statistics/linear_regression.hpp>
+#include "line_sep/line.hpp"
+#include "line_sep/misc.hpp"
 #include <cmath>
 #include <format>
 #include <fstream>
 #include <sstream>
 
-using namespace misc;
-
-namespace line {
+namespace line_sep::line {
     Line::Line(int lnum,
-               int32_t lsymb,
-               std::vector<double>& x,
-               std::vector<double>& y)
+                int32_t lsymb,
+                std::vector<double>& x,
+                std::vector<double>& y)
         : num(lnum), symb(lsymb)
     {
         if (x.size() != y.size())
             throw std::invalid_argument("X and Y columns should have the same size in order to be written to a line");
 
-        xy = Eigen::MatrixXd::Constant(x.size(), 2, rDUMMY);
+        xy = Eigen::MatrixXd::Constant(x.size(), 2, misc::rDUMMY);
         Eigen::Map<Eigen::VectorXd> xv(x.data(), x.size());
         Eigen::Map<Eigen::VectorXd> yv(y.data(), y.size());
         xy.col(0) = xv;
@@ -28,8 +24,8 @@ namespace line {
         xlim = {xy.col(0).minCoeff(), xy.col(0).maxCoeff()};
         ylim = {xy.col(1).minCoeff(), xy.col(1).maxCoeff()};
 
-        dist_left = std::vector<double>(x.size(), rDUMMY);
-        dist_right = std::vector<double>(x.size(), rDUMMY);
+        dist_left = std::vector<double>(x.size(), misc::rDUMMY);
+        dist_right = std::vector<double>(x.size(), misc::rDUMMY);
     }
     std::ostream& operator<<(std::ostream& os, const Line& line)
     {
@@ -37,4 +33,3 @@ namespace line {
         return os;
     }
 }
-
